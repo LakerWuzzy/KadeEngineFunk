@@ -68,6 +68,19 @@ using StringTools;
 class PlayState extends MusicBeatState
 {
 	public static var instance:PlayState = null;
+	
+	public static var ratingStuff:Array<Dynamic> = [
+		['Go play the tutorial lmao.', 0.2], //From 0% to 19%
+		['You suck!!', 0.4], //From 20% to 39%
+		['Bad', 0.5], //From 40% to 49%
+		['Bruh', 0.6], //From 50% to 59%
+		['Meh', 0.69], //From 60% to 68%
+		['Nice', 0.7], //69%
+		['Good', 0.8], //From 70% to 79%
+		['Great', 0.9], //From 80% to 89%
+		['Sick!', 1], //From 90% to 99%
+		['Perfect!!', 1] //The value on this one isn't used actually, since Perfect is always "1"
+	];
 
 	public static var curStage:String = '';
 	public static var SONG:SwagSong;
@@ -951,14 +964,10 @@ class PlayState extends MusicBeatState
 		if (FlxG.save.data.downscroll)
 			kadeEngineWatermark.y = FlxG.height * 0.9 + 45;
 
-		scoreTxt = new FlxText(FlxG.width / 2 - 235, healthBarBG.y + 50, 0, "", 20);
-		if (!FlxG.save.data.accuracyDisplay)
-			scoreTxt.x = healthBarBG.x + healthBarBG.width / 2;
-		scoreTxt.setFormat(Paths.font("vcr.ttf"), 16, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE,FlxColor.BLACK);
+		scoreTxt = new FlxText(0, healthBarBG.y + 36, FlxG.width, "", 20);
+		scoreTxt.setFormat(Paths.font("Vividly-Regular.ttf"), 32, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		scoreTxt.scrollFactor.set();
-		if (offsetTesting)
-			scoreTxt.x += 300;
-		if(FlxG.save.data.botplay) scoreTxt.x = FlxG.width / 2 - 20;													  
+		scoreTxt.borderSize = 1.25;
 		add(scoreTxt);
 
 		replayTxt = new FlxText(healthBarBG.x + healthBarBG.width / 2 - 75, healthBarBG.y + (FlxG.save.data.downscroll ? 100 : -100), 0, "REPLAY", 20);
@@ -1084,6 +1093,7 @@ class PlayState extends MusicBeatState
 					startCountdown();
 			}
 		}
+		RecalculateRating();
 
 		if (!loadRep)
 			rep = new Replay("na");
@@ -1852,9 +1862,11 @@ class PlayState extends MusicBeatState
 
 		super.update(elapsed);
 
-		scoreTxt.text = Ratings.CalculateRanking(songScore,songScoreDef,nps,maxNPS,accuracy);
-		if (!FlxG.save.data.accuracyDisplay)
-			scoreTxt.text = "Score: " + songScore;
+		if(ratingName == '?') {
+			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + songMisses + ' | Rating: ' + ratingName;
+		} else {
+			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + songMisses + ' | Rating: ' + ratingName + ' (' + Highscore.floorDecimal(ratingPercent * 100, 2) + '%)' + ' - ' + ratingFC;//peeps wanted no integer rating
+		}
 
 		if (FlxG.keys.justPressed.ENTER  #if android || FlxG.android.justReleased.BACK #end  && startedCountdown && canPause)
 		{
@@ -3599,6 +3611,56 @@ class PlayState extends MusicBeatState
 				lightningStrikeShit();
 			}
 		}
+	}
+	
+	public var ratingName:String = '?';
+	public var ratingPercent:Float;
+	public var ratingFC:String;
+	public function RecalculateRating() {
+		setOnLuas('score', songScore);
+		setOnLuas('misses', songMisses);
+		setOnLuas('hits', songHits);
+
+		var ret:Dynamic = callOnLuas('onRecalculateRating', []);
+		if(ret != FunkinLua.Function_Stop)
+		{
+			if(totalPlayed < 1) //Prevent divide by 0
+				ratingName = '?';
+			else
+			{
+				// Rating Percent
+				ratingPercent = Math.min(1, Math.max(0, totalNotesHit / totalPlayed));
+				//trace((totalNotesHit / totalPlayed) + ', Total: ' + totalPlayed + ', notes hit: ' + totalNotesHit);
+
+				// Rating Name
+				if(ratingPercent >= 1)
+				{
+					ratingName = ratingStuff[ratingStuff.length-1][0]; //Uses last string
+				}
+				else
+				{
+					for (i in 0...ratingStuff.length-1)
+					{
+						if(ratingPercent < ratingStuff[i][1])
+						{
+							ratingName = ratingStuff[i][0];
+							break;
+						}
+					}
+				}
+			}
+
+			// Rating FC
+			ratingFC = "";
+			if (sicks > 0) ratingFC = "SFC";
+			if (goods > 0) ratingFC = "GFC";
+			if (bads > 0 || shits > 0) ratingFC = "FC";
+			if (songMisses > 0 && songMisses < 10) ratingFC = "SDCB";
+			else if (songMisses >= 10) ratingFC = "Clear";
+		}
+		setOnLuas('rating', ratingPercent);
+		setOnLuas('ratingName', ratingName);
+		setOnLuas('ratingFC', ratingFC);
 	}
 
 	var curLight:Int = 0;
