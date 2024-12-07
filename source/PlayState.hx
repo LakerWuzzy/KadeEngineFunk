@@ -53,7 +53,6 @@ import lime.utils.Assets;
 import openfl.display.BlendMode;
 import openfl.display.StageQuality;
 import openfl.filters.ShaderFilter;
-import FunkinLua;
 import ui.Mobilecontrols;
 
 #if windows
@@ -1095,7 +1094,6 @@ class PlayState extends MusicBeatState
 					startCountdown();
 			}
 		}
-		RecalculateRating();
 
 		if (!loadRep)
 			rep = new Replay("na");
@@ -1864,7 +1862,7 @@ class PlayState extends MusicBeatState
 
 		super.update(elapsed);
 
-		if(ratingName == '?') {
+		if(accuracy == '0') {
 			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + misses + ' | Rating: ' + accuracy;
 		} else {
 			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + misses + ' | Rating: ' + accuracy + ' (' + Highscore.floorDecimal(ratingPercent * 100, 2) + '%)'; //peeps wanted no integer rating
