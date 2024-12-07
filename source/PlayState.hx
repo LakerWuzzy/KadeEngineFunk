@@ -1865,9 +1865,9 @@ class PlayState extends MusicBeatState
 		super.update(elapsed);
 
 		if(ratingName == '?') {
-			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + misses + ' | Rating: ' + ratingName;
+			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + misses + ' | Rating: ' + accuracy;
 		} else {
-			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + misses + ' | Rating: ' + ratingName + ' (' + Highscore.floorDecimal(ratingPercent * 100, 2) + '%)' + ' - ' + ratingFC;//peeps wanted no integer rating
+			scoreTxt.text = 'Score: ' + songScore + ' | Misses: ' + misses + ' | Rating: ' + accuracy + ' (' + Highscore.floorDecimal(ratingPercent * 100, 2) + '%)'; //peeps wanted no integer rating
 		}
 
 		if (FlxG.keys.justPressed.ENTER  #if android || FlxG.android.justReleased.BACK #end  && startedCountdown && canPause)
@@ -3613,76 +3613,6 @@ class PlayState extends MusicBeatState
 				lightningStrikeShit();
 			}
 		}
-	}
-	
-	public function callOnLuas(event:String, args:Array<Dynamic>):Dynamic {
-		var returnVal:Dynamic = FunkinLua.Function_Continue;
-		#if LUA_ALLOWED
-		for (i in 0...luaArray.length) {
-			var ret:Dynamic = luaArray[i].call(event, args);
-			if(ret != FunkinLua.Function_Continue) {
-				returnVal = ret;
-			}
-		}
-		#end
-		return returnVal;
-	}
-
-	public function setOnLuas(variable:String, arg:Dynamic) {
-		#if LUA_ALLOWED
-		for (i in 0...luaArray.length) {
-			luaArray[i].set(variable, arg);
-		}
-		#end
-	}
-	
-	public var ratingName:String = '?';
-	public var ratingPercent:Float;
-	public var ratingFC:String;
-	public function RecalculateRating() {
-		setOnLuas('score', songScore);
-		setOnLuas('misses', misses);
-		
-		var ret:Dynamic = callOnLuas('onRecalculateRating', []);
-		if(ret != FunkinLua.Function_Stop)
-		{
-			if(totalPlayed < 1) //Prevent divide by 0
-				ratingName = '?';
-			else
-			{
-				// Rating Percent
-				ratingPercent = Math.min(1, Math.max(0, totalNotesHit / totalPlayed));
-				//trace((totalNotesHit / totalPlayed) + ', Total: ' + totalPlayed + ', notes hit: ' + totalNotesHit);
-
-				// Rating Name
-				if(ratingPercent >= 1)
-				{
-					ratingName = ratingStuff[ratingStuff.length-1][0]; //Uses last string
-				}
-				else
-				{
-					for (i in 0...ratingStuff.length-1)
-					{
-						if(ratingPercent < ratingStuff[i][1])
-						{
-							ratingName = ratingStuff[i][0];
-							break;
-						}
-					}
-				}
-			}
-
-			// Rating FC
-			ratingFC = "";
-			if (sicks > 0) ratingFC = "SFC";
-			if (goods > 0) ratingFC = "GFC";
-			if (bads > 0 || shits > 0) ratingFC = "FC";
-			if (misses > 0 && misses < 10) ratingFC = "SDCB";
-			else if (misses >= 10) ratingFC = "Clear";
-		}
-		setOnLuas('rating', ratingPercent);
-		setOnLuas('ratingName', ratingName);
-		setOnLuas('ratingFC', ratingFC);
 	}
 
 	var curLight:Int = 0;
